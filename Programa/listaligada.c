@@ -25,7 +25,7 @@ typedef
 // Obs: não permite elementos repetidos.
 char inserir(Lista* lis, void* inf)
 {
-    if (inf == NULL)
+    if (lis == NULL || inf == NULL)
         return 0; // false
 
     if (lis->inicio == NULL)
@@ -69,8 +69,6 @@ char inserir(Lista* lis, void* inf)
     novo->prox = atual->prox;
     atual->prox = novo;
 
-    free(atual);
-
     return 1; // true
 }
 
@@ -104,7 +102,6 @@ void* remover(Lista* lis)
     free(atual->prox->prox);
 
     atual->prox = NULL;
-    free(atual);
 
     return info;
 }

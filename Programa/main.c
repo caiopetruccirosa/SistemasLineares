@@ -1,6 +1,7 @@
-#include<string.h>
-#include<stdio.h>
-#include<stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "listaligada.c"
 
 char* lerArquivo(FILE *arquivo) {
     char* texto;
@@ -63,9 +64,18 @@ int main()
         i++;
     }
 
-    free(equacao);
     free(texto);
     free(arq);
+
+    Lista* incognitas = { NULL, strcmp };
+    for (i = 0; i < linhas; i++) {
+        int j;
+        for (j = 0; j < strlen(*(equacoes+i)); j++) {
+            char c = *(*(equacoes+i)+j);
+
+
+        }
+    }
 
     celula** coeficientes = (celula**) malloc(linhas * sizeof(celula*));
     for (i = 0; i < linhas; i++) {
@@ -73,9 +83,11 @@ int main()
 
         int j;
         for (j = 0; j < strlen(*(equacoes+i)); j++) {
-            char c = *(*(equacoes+i)+j);
+            //(*(*(coeficientes+i)+j)) = { 0, getFromIndex(incognitas, j) }; 
         }
     }
+
+    printf("%p", coeficientes);
     /*
     printf("Solucao do sistema:\n");
     for (i = 0; i < linhas; i++) {

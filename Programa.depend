@@ -1,0 +1,17 @@
+# depslib dependency file v1.0
+1538799428 source:c:\users\caiop\desktop\sistemaslineares\programa\listaligada.c
+	<stdlib.h>
+	"listaligada.h"
+
+1538800448 source:c:\users\caiop\desktop\sistemaslineares\programa\main.c
+	<string.h>
+	<stdio.h>
+	<stdlib.h>
+	"listaligada.h"
+
+1538796270 c:\users\caiop\desktop\sistemaslineares\programa\listaligada.c
+	<stdlib.h>
+	"listaligada.h"
+
+1538797365 c:\users\caiop\desktop\sistemaslineares\programa\listaligada.h
+

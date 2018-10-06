@@ -1,26 +1,7 @@
 #include <stdlib.h>
+#include "listaligada.h"
 
-// struct que define como deve ser o Nó
-typedef
-    struct No
-    {
-        void* info;
-        struct No* prox;
-    }
-    No;
-
-// struct que define como deve ser a Lista
-typedef
-    struct Lista
-    {
-        No* inicio;
-        int (*compareTo) (void*, void*);
-        //char* (*toString) (void*);
-    }
-    Lista;
-
-
-// Método que insere, já ordenado, um elemento na lista e retorna 
+// Método que insere, já ordenado, um elemento na lista e retorna
 // boolean indicando se o elemento foi inserido ou não.
 // Obs: não permite elementos repetidos.
 char inserir(Lista* lis, void* inf)
@@ -32,6 +13,7 @@ char inserir(Lista* lis, void* inf)
     {
         lis->inicio = (No*) malloc(sizeof(No));
         lis->inicio->info = inf;
+        lis->inicio->prox = NULL;
         return 1; // true
     }
 
@@ -112,17 +94,14 @@ void* remover(Lista* lis)
 // a lista esteja vazia ou o item não for encontrado.
 void* getFromIndex(Lista* lis, int index)
 {
-    if (lis == NULL || lis->inicio == NULL)
-        return NULL;
-
-    if (index < 0)
+    if (lis == NULL || index < 0)
         return NULL;
 
     void* info = NULL;
 
     int i = 0;
     No* atual = lis->inicio;
-    while (atual->prox != NULL)
+    while (atual != NULL)
     {
         if (i == index)
         {
@@ -130,8 +109,25 @@ void* getFromIndex(Lista* lis, int index)
             break;
         }
 
+        i++;
         atual = atual->prox;
     }
 
     return info;
+}
+
+int length(Lista* lis)
+{
+    if (lis == NULL)
+        return 0;
+
+    No* atual = lis->inicio;
+    int ret = 0;
+    while (atual != NULL)
+    {
+        ret++;
+        atual = atual->prox;
+    }
+
+    return ret;
 }

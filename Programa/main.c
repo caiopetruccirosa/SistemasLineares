@@ -297,7 +297,7 @@ void desalocarVariaveis(FILE* arquivo, char* texto, char** equacoes, int qtdEqua
 }
 
 // funcao principal
-void eliminacaoGaussiana(double mat[N][N+1])
+void eliminacaoGaussiana(Celula** mat, int size)
 {
     /* reduzir para forma escalonada */
     int sinalizadordeSingular = escalonamento(mat);
@@ -310,11 +310,10 @@ void eliminacaoGaussiana(double mat[N][N+1])
         /* se a forma escalonada da equacao correspondente
            a linha 0 for 0, o sistema possuirá
            infinitas soluções: SI*/
-        if (((mat+sinalizadordeSingular)+N))
+        if ((*(mat+sinalizadordeSingular)+size))
             printf("Sistema Inconsistente.");
         else
-            printf("Pode haver infinitas "
-                   "solucoes.");
+            printf("Pode haver infinitas solucoes.");
 
         return;
     }
@@ -325,41 +324,44 @@ void eliminacaoGaussiana(double mat[N][N+1])
 }
 
 // funcao para operacao elementar de trocar duas linhas
-void mudar_linhas(double mat[N][N+1], int i, int j)
+void mudar_linhas(Celula** mat, int size, int i, int j)
 {
     //printf("Linhas mudadas %d e %d\n", i, j);
 
-    for (int k=0; k<=N; k++)
+    for (int k=0; k <= size; k++)
     {
-        double temp = ((mat+i)+k);
-        ((mat+i)+k) = ((mat+j)+k);
-        ((mat+j)+k) = temp;
+        Celula temp = *(*(mat+i)+k);
+        *(*(mat+i)+k) = *(*(mat+j)+k);
+        *(*(mat+j)+k) = temp;
     }
 }
 
 // funcao para printar a matriz em qualquer estagio
-void print(double mat[N][N+1])
+void print(Celula** mat, int size)
 {
-    for (int i=0; i<N; i++, printf("\n"))
-        for (int j=0; j<=N; j++)
-            printf("%lf ", ((mat+i)+j));
+    for (int i=0; i < size; i++, printf("\n"))
+    {
+        for (int j=0; j <= size; j++) {
+            printf("%s : %.2lf  ", (*(mat+i)+j)->nome, (*(mat+i)+j)->valor);
+        }
+    }
 
     printf("\n");
 }
 
 // funcao para escalonar a matriz desejada
-int escalonamento(double mat[N][N+1])
+int escalonamento(Celula** mat, int size)
 {
-    for (int k=0; k<N; k++)
+    for (int k=0; k < size; k++)
     {
         // Inicializa máximos valor e index para pivotamento
         int i_max = k;
-        int v_max = ((mat + i_max)+k);
+        double v_max = (*(mat + i_max)+k)->valor;
 
         /* encontra maior amplitude para pivot */
-        for (int i = k+1; i < N; i++)
-            if (abs( ((mat+i)+k) > v_max))
-                v_max = ((mat+i)+k), i_max = i;
+        for (int i = k+1; i < size; i++)
+            if (abs((*(mat+i)+k)->valor > v_max))
+                v_max = (*(mat+i)+k)->valor, i_max = i;
 
         /* se houver um elemento na diagonal principal equivalente a zero,
          a matriz será singular, pois levará a uma divisão por zero
@@ -367,57 +369,58 @@ int escalonamento(double mat[N][N+1])
 
         /* troca a maior linha pela atual*/
         if (i_max != k)
-            mudar_linhas(mat, k, i_max);
+            mudar_linhas(mat, size, k, i_max);
 
 
-        for (int i=k+1; i<N; i++)
+        for (int i=k+1; i < size; i++)
         {
             /* fator f para setar linha atual kº elemento para 0,
                deixando a kº coluna para 0 */
-            double f = ((mat+i)+k) / ((mat+k)+k);
+            double f = (*(mat+i)+k)->valor / (*(mat+k)+k)->valor;
 
 
             /* subtrai fº multiplo do correspondente elemento da linha k*/
-            for (int j=k+1; j<=N; j++)
-                ((mat+i)+j) -= ((mat+k)+j) *f;
+            for (int j=k+1; j <= size; j++)
+                (*(mat+i)+j)->valor -= (*(mat+k)+j)->valor *f;
 
             /* colocando zeros na matriz triangular inferior */
-            ((mat+i)+k) = 0;
+            (*(mat+i)+k)->valor = 0.0;
         }
-
     }
+
     return -1;
 }
 
 // funcao para calcular o valor das incognitas
-void backSub(double mat[N][N+1])
+void backSub(Celula** mat, int size)
 {
-    double x[N];  // vetor para guardar os resultados
+    Celula* x;  // vetor para guardar os resultados
+    x = (Celula*)malloc(size*sizeof(Celula));
 
     /* comeca calculando a partir da ultima equacao*/
-    for (int i = N-1; i >= 0; i--)
+    for (int i = size-1; i >= 0; i--)
     {
         /* começa com o lado direito da equação */
-         (x+i) = *((mat+i)+N);
+         (x+i)->valor = (*(mat+i)+size)->valor;
 
         /* inicializa j como i+1, pois a matriz é
            triangular superior*/
-        for (int j=i+1; j<N; j++)
+        for (int j= i+1; j < size; j++)
         {
             /* subtrai todos os valores da esquerda
              * exceto o coeficiente da variavel
              * cujo valor esta sendo calculado */
-            (x+i) -= *((mat+i)+j) * *(x+j);
+            (x+i)->valor -= (*(mat+i)+j)->valor * (x+j)->valor;
         }
 
-        /* divide o lado direito pelo coeficiente da 
+        /* divide o lado direito pelo coeficiente da
            incognita sendo calculada*/
-        (x+i) = *(x+i) / *((mat+i)+i);
+        (x+i)->valor = (x+i)->valor / (*(mat+i)+i)->valor;
     }
 
     printf("\nSolucao do sistema:\n");
-    for (int i=0; i<N; i++)
-        printf("%lf\n", *(x+i));
+    for (int i=0; i < size; i++)
+        printf("%lf\n", (x+i)->valor);
 }
 
 // Método principal do programa
@@ -476,22 +479,11 @@ int main()
 
     /////////////////////////////////////
 
-    // listagem da matriz apenas para propósitos de desenvolvimento
-    for (i = 0; i < qtdEquacoes; i++) {
-        int j;
-        for (j = 0; j < qtdEquacoes + 1; j++) {
-            char* nome = (*(coeficientes+i)+j)->nome;
-            double valor = (*(coeficientes+i)+j)->valor;
-            printf("%s : %.2lf   ", nome, valor);
-        }
-
-        printf("\n");
-    }
-
-    /////////////////////////////////////
-
     // solucionar o sistema
     // e printrar a solução
 
     // erois j
+
+    eliminacaoGaussiana(coeficientes, qtdEquacoes);
+    print(coeficientes, qtdEquacoes);
 }

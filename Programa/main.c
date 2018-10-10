@@ -281,7 +281,7 @@ void extrairCoeficientes(Celula** coeficientes, Lista* incognitas, char** equaco
 }
 
 // Método que desaloca as variáveis
-void desalocarVariaveis(FILE* arquivo, char* texto, char** equacoes, int qtdEquacoes)
+void desalocarVariaveis(FILE* arquivo, char* texto, Lista* lis, Celula** mat, char** equacoes, int qtdEquacoes)
 {
     // desaloca o arquivo, pois ele não será mais usado
     free(arquivo);
@@ -289,39 +289,31 @@ void desalocarVariaveis(FILE* arquivo, char* texto, char** equacoes, int qtdEqua
     // desaloca o texto pois ele não será mais usado
     free(texto);
 
-    // desaloca a matriz de equações, pois não será mais usada
+    // desaloca a lista
+    free(lis);
+
+    // desacola a matriz de células
     int i;
+    for (i = 0; i < qtdEquacoes; i++)
+    {
+        int j;
+        for (j = 0; j < qtdEquacoes+1; j++)
+            free((*(mat+i)+j)->nome);
+
+        free((mat+i));
+    }
+    free(mat);
+
+    // desaloca a matriz de equações, pois não será mais usada
     for (i = 0; i < qtdEquacoes; i++)
         free(*(equacoes+i));
     free(equacoes);
 }
 
-// funcao principal
-void eliminacaoGaussiana(Celula** mat, int size)
-{
-    /* reduzir para forma escalonada */
-    int sinalizadordeSingular = escalonamento(mat);
 
-    /* se matrix for singular */
-    if (sinalizadordeSingular != -1)
-    {
-        printf("Matriz Singular.\n");
-
-        /* se a forma escalonada da equacao correspondente
-           a linha 0 for 0, o sistema possuirá
-           infinitas soluções: SI*/
-        if ((*(mat+sinalizadordeSingular)+size))
-            printf("Sistema Inconsistente.");
-        else
-            printf("Pode haver infinitas solucoes.");
-
-        return;
-    }
-
-    /* solucionar sistema e printar usando substituição
-       da última linha para a primeira */
-    backSub(mat);
-}
+//////////////////////////////////////////
+//////////////////////////////////////////
+//////////////////////////////////////////
 
 // funcao para operacao elementar de trocar duas linhas
 void mudar_linhas(Celula** mat, int size, int i, int j)
@@ -342,10 +334,9 @@ void print(Celula** mat, int size)
     for (int i=0; i < size; i++, printf("\n"))
     {
         for (int j=0; j <= size; j++) {
-            printf("%s : %.2lf  ", (*(mat+i)+j)->nome, (*(mat+i)+j)->valor);
+            printf("%s : %.2lf  ", (*(mat+i)+j)->valor, (*(mat+i)+j)->nome);
         }
     }
-
     printf("\n");
 }
 
@@ -392,7 +383,7 @@ int escalonamento(Celula** mat, int size)
 }
 
 // funcao para calcular o valor das incognitas
-void backSub(Celula** mat, int size)
+Celula* backSub(Celula** mat, int size)
 {
     Celula* x;  // vetor para guardar os resultados
     x = (Celula*)malloc(size*sizeof(Celula));
@@ -401,7 +392,8 @@ void backSub(Celula** mat, int size)
     for (int i = size-1; i >= 0; i--)
     {
         /* começa com o lado direito da equação */
-         (x+i)->valor = (*(mat+i)+size)->valor;
+        (x+i)->nome = (*(mat+i)+i)->nome;
+        (x+i)->valor = (*(mat+i)+size)->valor;
 
         /* inicializa j como i+1, pois a matriz é
            triangular superior*/
@@ -418,9 +410,35 @@ void backSub(Celula** mat, int size)
         (x+i)->valor = (x+i)->valor / (*(mat+i)+i)->valor;
     }
 
-    printf("\nSolucao do sistema:\n");
-    for (int i=0; i < size; i++)
-        printf("%lf\n", (x+i)->valor);
+    return x;  // retorna os resultados
+}
+
+// funcao principal
+Celula* eliminacaoGaussiana(Celula** mat, int size)
+{
+    /* reduzir para forma escalonada */
+    int sinalizadordeSingular = escalonamento(mat, size);
+
+    /* se matrix for singular */
+    if (sinalizadordeSingular != -1)
+    {
+        printf("Matriz Singular!\n");
+
+        /* se a forma escalonada da equacao correspondente
+           a linha 0 for 0, o sistema possuirá
+           infinitas soluções: SI*/
+        if ((*(mat+sinalizadordeSingular)+size))
+            printf("O sistema eh Sistema Indeterminado.");
+        else
+            printf("Existem infinitas solucoes.");
+
+        return NULL;
+    }
+
+    /* solucionar sistema e printar usando substituição
+       da última linha para a primeira */
+    Celula* ret = backSub(mat, size);
+    return ret;
 }
 
 // Método principal do programa
@@ -474,16 +492,20 @@ int main()
 
     Celula** coeficientes = criarMatriz(incognitas, qtdEquacoes);  // cria uma matriz com incógnitas organizadas por colunas e valores padrão
     extrairCoeficientes(coeficientes, incognitas, equacoes, qtdEquacoes);  // extrai os coeficientes, passando a matriz de coeficientes por referência
-
-    desalocarVariaveis(arq, texto, equacoes, qtdEquacoes);  // desaloca as variáveis que não serão mais usadas
+    Celula* resultado = eliminacaoGaussiana(coeficientes, qtdEquacoes); // resolve o sistema
 
     /////////////////////////////////////
 
-    // solucionar o sistema
-    // e printrar a solução
+    // resolve o sistema
+    printf("Sistema:\n");
+    for (i = 0; i < qtdEquacoes; i++)
+        printf(" %s\n", *(equacoes+i));
 
-    // erois j
+    printf("\nSolucao do sistema:\n");
+    for (int i = 0; i < qtdEquacoes; i++)
+        printf(" %s = %.2lf\n", (resultado+i)->nome, (resultado+i)->valor);
 
-    eliminacaoGaussiana(coeficientes, qtdEquacoes);
-    print(coeficientes, qtdEquacoes);
+    /////////////////////////////////////
+
+    desalocarVariaveis(arq, texto, incognitas, coeficientes, equacoes, qtdEquacoes);  // desaloca as variáveis que não serão mais usadas
 }

@@ -11,26 +11,47 @@ typedef
     }
     Celula;
 
+int quantasLinhas(FILE *arquivo)
+{
+    if (arquivo == NULL)
+        return 0;
+
+    fseek(arquivo, 0, SEEK_SET);
+
+    char c;
+    int linhas = 1;
+    while ((c = fgetc(arquivo)) != EOF)
+    {
+        if (c == '\n')
+            linhas++;
+    }
+
+    fseek(arquivo, 0, SEEK_SET);
+
+    return linhas;
+}
+
 char* lerArquivo(FILE *arquivo) // método que lê um arquivo passado como parâmetro e devolve o texto do arquivo em uma string
 {
     if (arquivo == NULL) // arquivo nao existe
         return NULL;
 
     char* texto;
-    size_t n = 0;
+    size_t i = 0;
     int c;
 
     fseek(arquivo, 0, SEEK_END);
     long int f_size = ftell(arquivo);  // pega o tamanho do arquivo
     fseek(arquivo, 0, SEEK_SET);
-    texto = malloc(f_size);
+    texto = (char*)malloc(f_size*sizeof(char));
 
     while ((c = fgetc(arquivo)) != EOF)
     {
-        texto[n++] = (char)c;
+        i++;
+        *(texto+i) = (char)c;
     }
 
-    texto[n] = '\0';
+    *(texto+i) = '\0';
 
     return texto;
 }
@@ -113,158 +134,146 @@ Celula** criarMatriz(Lista* incognitas, int qtdEquacoes)
 
 void extrairCoeficientes(Celula** coeficientes, Lista* incognitas, char** equacoes, int qtdEquacoes)
 {
-    char* incognitaAtual = NULL;
-    char* coeficienteAtual = NULL;
-    char* resultadoAtual = NULL;
+    char* incognitaAtual;
+    char* coeficienteAtual;
+    char* resultado;
 
     int i;
     for (i = 0; i < qtdEquacoes; i++)
     {
+        incognitaAtual = NULL;
+        coeficienteAtual = NULL;
+        resultado = NULL;
+
         int incognitaAtual_index = 0;
         int coeficienteAtual_index = 0;
-        int resultadoAtual_index = 0;
+        int resultado_index = 0;
 
         int ladoDaEquacao = -1;
-
         int j;
         for (j = 0; j < strlen(*(equacoes+i)); j++)
         {
-            /*
-            if (ladoDaEquacao < 0)
-            {
-
-            }
-            else if (ladoDaEquacao > 0)
-            {
-                *(resultadoAtual+resultadoAtual_index) = (char)char_ascii;
-                resultadoAtual_index++;
-            }
-            */
-
             int char_ascii = (int)*(*(equacoes+i)+j);
 
-            if ((char_ascii >= 65 && char_ascii <= 90) || (char_ascii >= 97 && char_ascii <= 122))
+            if (ladoDaEquacao < 0) // antes do "="
             {
-                if (coeficienteAtual == NULL || strcmp(coeficienteAtual, "-") == 0)
+                if (char_ascii == 61) // igual a "="
+                    ladoDaEquacao = 1;
+
+                if (char_ascii == 43 || char_ascii == 45 || char_ascii == 61) // igual a "+" ou a "-" ou a "="
                 {
-                    coeficienteAtual = (char*)malloc(2*sizeof(char));
-                    *coeficienteAtual = "1";
-                    coeficienteAtual_index = 1;
+                    if (coeficienteAtual != NULL && incognitaAtual != NULL)
+                    {
+                        *(coeficienteAtual+coeficienteAtual_index) = '\0';
+                        *(incognitaAtual+incognitaAtual_index) = '\0';
+
+                        int k;
+                        for (k = 0; k < qtdEquacoes; k++)
+                        {
+                            char* colunaAtual = (*(coeficientes+i)+k)->nome;
+
+                            if (strcmp(incognitaAtual, colunaAtual) == 0)
+                                (*(coeficientes+i)+k)->valor += atof(coeficienteAtual);
+                        }
+
+
+                        free(coeficienteAtual);
+                        free(incognitaAtual);
+
+                        coeficienteAtual = NULL;
+                        incognitaAtual = NULL;
+                    }
                 }
 
-                if (incognitaAtual == NULL)
+                if ((char_ascii >= '0' && char_ascii <= '9') || char_ascii == '-' || char_ascii == '.') // seja quaisquer números ou "-"
                 {
-                    int tam = 0;
-                    int k;
-                    for (k = j; k < strlen(*(equacoes+i)); k++)
+                    if (coeficienteAtual == NULL)
                     {
-                        int char_ascii_aux = (int)*(*(equacoes+i)+k);
-                        if ((char_ascii_aux >= 65 && char_ascii_aux <= 90) || (char_ascii_aux >= 97 && char_ascii_aux <= 122))
-                            tam++;
-                        else if (char_ascii_aux != 32)
-                            break;
+                        int tam = 1;
+                        int k;
+                        for (k = j+1; k < strlen(*(equacoes+i)); k++)
+                        {
+                            int char_ascii_aux = (int)*(*(equacoes+i)+k);
+                            if (char_ascii_aux >= '0' && char_ascii_aux <= '9')
+                                tam++;
+                            else if (char_ascii_aux != ' ')
+                                break;
+                        }
+
+                        coeficienteAtual = (char*)malloc((tam+1)*sizeof(char));
+                        coeficienteAtual_index = 0;
                     }
 
-                    incognitaAtual = (char*)malloc((tam+1)*sizeof(char));
-                    incognitaAtual_index = 0;
+                    *(coeficienteAtual+coeficienteAtual_index) = (char)char_ascii;
+                    coeficienteAtual_index++;
                 }
+                else if ((char_ascii >= 65 && char_ascii <= 90) || (char_ascii >= 97 && char_ascii <= 122)) // qualquer letra
+                {
+                    if (coeficienteAtual == NULL)
+                    {
+                        coeficienteAtual = (char*)malloc((2)*sizeof(char));
+                        *coeficienteAtual = "1";
+                        coeficienteAtual_index++;
+                    }
 
-                *(incognitaAtual+incognitaAtual_index) = (char)char_ascii;
-                incognitaAtual_index++;
+                    if (incognitaAtual == NULL)
+                    {
+                        int tam = 0;
+                        int k;
+                        for (k = j; k < strlen(*(equacoes+i)); k++)
+                        {
+                            int char_ascii_aux = (int)*(*(equacoes+i)+k);
+                            if ((char_ascii_aux >= 65 && char_ascii_aux <= 90) || (char_ascii_aux >= 97 && char_ascii_aux <= 122))
+                                tam++;
+                            else if (char_ascii_aux != 32)
+                                break;
+                        }
+
+                        incognitaAtual = (char*)malloc((tam+1)*sizeof(char));
+                        incognitaAtual_index = 0;
+                    }
+
+                    *(incognitaAtual+incognitaAtual_index) = (char)char_ascii;
+                    incognitaAtual_index++;
+                }
             }
-            else if (char_ascii >= 48 && char_ascii <= 57) // seja quaisquer números
+            else if (ladoDaEquacao > 0) // depois do "="
             {
-                if (coeficienteAtual == NULL)
+                if (char_ascii >= 48 && char_ascii <= 57) // quaisquer números
                 {
-                    int tam = 0;
-                    int k;
-                    for (k = j; k < strlen(*(equacoes+i)); k++)
+                    if (resultado == NULL)
                     {
-                        int char_ascii_aux = (int)*(*(equacoes+i)+k);
-                        if (char_ascii_aux >= 48 && char_ascii_aux <= 57)
-                            tam++;
-                        else if (char_ascii_aux != 32)
-                            break;
+                        int tam = 0;
+                        int k;
+                        for (k = j; k < strlen(*(equacoes+i)); k++)
+                        {
+                            int char_ascii_aux = (int)*(*(equacoes+i)+k);
+                            if (char_ascii_aux >= 48 && char_ascii_aux <= 57)
+                                tam++;
+                            else if (char_ascii_aux != 32)
+                                break;
+                        }
+
+                        resultado = (char*)malloc((tam+1)*sizeof(char));
+                        resultado_index = 0;
                     }
 
-                    coeficienteAtual = (char*)malloc((tam+1)*sizeof(char));
-                    coeficienteAtual_index = 0;
-                }
-
-                *(coeficienteAtual+coeficienteAtual_index) = (char)char_ascii;
-                coeficienteAtual_index++;
-            }
-            else if (char_ascii == 45) // igual a "-"
-            {
-                if (coeficienteAtual != NULL && incognitaAtual != NULL)
-                {
-                    *(incognitaAtual+incognitaAtual_index) = '\0';
-                    *(coeficienteAtual+coeficienteAtual_index) = '\0';
-
-                    int k;
-                    for (k = 0; k < qtdEquacoes; k++)
-                    {
-                        char* colunaAtual = (*(coeficientes+i)+k)->nome;
-
-                        if (strcmp(incognitaAtual, colunaAtual) == 0)
-                            (*(coeficientes+i)+k)->valor += atof(coeficienteAtual);
-                    }
-
-                    incognitaAtual = NULL;
-                    coeficienteAtual = NULL;
-                }
-
-                int tam = 0;
-                int k;
-                for (k = j+1; k < strlen(*(equacoes+i)); k++)
-                {
-                    int char_ascii_aux = (int)*(*(equacoes+i)+k);
-                    if (char_ascii_aux >= 48 && char_ascii_aux <= 57)
-                        tam++;
-                    else if (char_ascii_aux != 32)
-                        break;
-                }
-
-                coeficienteAtual = (char*)malloc((tam+2)*sizeof(char));
-                coeficienteAtual_index = 0;
-
-                *(coeficienteAtual) = "-";
-                coeficienteAtual_index++;
-            }
-            else if (char_ascii == 61) // igual a "="
-            {
-                if (coeficienteAtual != NULL && incognitaAtual != NULL)
-                {
-                    *(incognitaAtual+incognitaAtual_index) = '\0';
-                    *(coeficienteAtual+coeficienteAtual_index) = '\0';
-
-                    int k;
-                    for (k = 0; k < qtdEquacoes; k++)
-                    {
-                        char* colunaAtual = (*(coeficientes+i)+k)->nome;
-
-                        if (strcmp(incognitaAtual, colunaAtual) == 0)
-                            (*(coeficientes+i)+k)->valor += atof(coeficienteAtual);
-                    }
-
-                    incognitaAtual = NULL;
-                    coeficienteAtual = NULL;
+                    *(resultado+resultado_index) = (char)char_ascii;
+                    resultado_index++;
                 }
             }
         }
 
-        if (resultadoAtual != NULL)
+        if (resultado != NULL)
         {
-            *(resultadoAtual+resultadoAtual_index) = '\0';
-            (*(coeficientes+i)+(qtdEquacoes-1))->valor += atof(resultadoAtual);
-
-            resultadoAtual = NULL;
+            *(resultado+resultado_index) = '\0';
+            (*(coeficientes+i)+qtdEquacoes)->valor = atof(resultado);
         }
-    }
 
-    free(incognitaAtual);
-    free(coeficienteAtual);
-    free(resultadoAtual);
+        free(incognitaAtual);
+        free(coeficienteAtual);
+        free(resultado);
+    }
 }
 
 int main()
@@ -272,6 +281,7 @@ int main()
     char path[250];
     FILE *arq;
     char* texto;
+    int qtdEquacoes;
 
     /////////////////////////////////////
 
@@ -285,16 +295,18 @@ int main()
 		goto INICIO;
 	}
 
+    qtdEquacoes = quantasLinhas(arq);
     texto = lerArquivo(arq);
+
+    fclose(arq);
     free(arq);
 
     /////////////////////////////////////
 
-    int qtdEquacoes = atoi(strtok(texto, "\n"));
     char** equacoes = (char**)malloc(qtdEquacoes * sizeof(char*));
+    char* equacao = strtok(texto, "\n");
 
     int i = 0;
-    char* equacao = strtok(NULL, "\n");
     while (equacao != NULL)
     {
         *(equacoes+i) = (char*)malloc(strlen(equacao) * sizeof(char));
@@ -326,7 +338,7 @@ int main()
         for (j = 0; j < qtdEquacoes + 1; j++) {
             char* nome = (*(coeficientes+i)+j)->nome;
             double valor = (*(coeficientes+i)+j)->valor;
-            printf("%s:%.2lf ", nome, valor);
+            printf("%s : %.2lf   ", nome, valor);
         }
 
         printf("\n");

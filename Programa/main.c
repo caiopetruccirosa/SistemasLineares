@@ -297,7 +297,7 @@ void desalocarVariaveis(FILE* arquivo, char* texto, Lista* lis, Celula** mat, ch
     for (i = 0; i < qtdEquacoes; i++)
     {
         int j;
-        for (j = 0; j < qtdEquacoes+1; j++)
+        for (j = 0; j < qtdEquacoes; j++)
             free((*(mat+i)+j)->nome);
 
         free((mat+i));
@@ -319,8 +319,8 @@ void desalocarVariaveis(FILE* arquivo, char* texto, Lista* lis, Celula** mat, ch
 void mudar_linhas(Celula** mat, int size, int i, int j)
 {
     //printf("Linhas mudadas %d e %d\n", i, j);
-
-    for (int k=0; k <= size; k++)
+    int k;
+    for (k=0; k <= size; k++)
     {
         Celula temp = *(*(mat+i)+k);
         *(*(mat+i)+k) = *(*(mat+j)+k);
@@ -331,10 +331,12 @@ void mudar_linhas(Celula** mat, int size, int i, int j)
 // funcao para printar a matriz em qualquer estagio
 void print(Celula** mat, int size)
 {
-    for (int i=0; i < size; i++, printf("\n"))
+    int i;
+    for (i=0; i < size; i++, printf("\n"))
     {
-        for (int j=0; j <= size; j++) {
-            printf("%s : %.2lf  ", (*(mat+i)+j)->valor, (*(mat+i)+j)->nome);
+        int j;
+        for (j=0; j <= size; j++) {
+            printf("%s : %.2lf  ", (*(mat+i)+j)->nome, (*(mat+i)+j)->valor);
         }
     }
     printf("\n");
@@ -343,14 +345,16 @@ void print(Celula** mat, int size)
 // funcao para escalonar a matriz desejada
 int escalonamento(Celula** mat, int size)
 {
-    for (int k=0; k < size; k++)
+    int k;
+    for (k=0; k < size; k++)
     {
         // Inicializa máximos valor e index para pivotamento
         int i_max = k;
         double v_max = (*(mat + i_max)+k)->valor;
 
         /* encontra maior amplitude para pivot */
-        for (int i = k+1; i < size; i++)
+        int i;
+        for (i = k+1; i < size; i++)
             if (abs((*(mat+i)+k)->valor > v_max))
                 v_max = (*(mat+i)+k)->valor, i_max = i;
 
@@ -362,8 +366,7 @@ int escalonamento(Celula** mat, int size)
         if (i_max != k)
             mudar_linhas(mat, size, k, i_max);
 
-
-        for (int i=k+1; i < size; i++)
+        for (i=k+1; i < size; i++)
         {
             /* fator f para setar linha atual kº elemento para 0,
                deixando a kº coluna para 0 */
@@ -371,7 +374,8 @@ int escalonamento(Celula** mat, int size)
 
 
             /* subtrai fº multiplo do correspondente elemento da linha k*/
-            for (int j=k+1; j <= size; j++)
+            int j;
+            for (j=k+1; j <= size; j++)
                 (*(mat+i)+j)->valor -= (*(mat+k)+j)->valor *f;
 
             /* colocando zeros na matriz triangular inferior */
@@ -389,7 +393,8 @@ Celula* backSub(Celula** mat, int size)
     x = (Celula*)malloc(size*sizeof(Celula));
 
     /* comeca calculando a partir da ultima equacao*/
-    for (int i = size-1; i >= 0; i--)
+    int i;
+    for (i = size-1; i >= 0; i--)
     {
         /* começa com o lado direito da equação */
         (x+i)->nome = (*(mat+i)+i)->nome;
@@ -397,7 +402,8 @@ Celula* backSub(Celula** mat, int size)
 
         /* inicializa j como i+1, pois a matriz é
            triangular superior*/
-        for (int j= i+1; j < size; j++)
+        int j;
+        for (j= i+1; j < size; j++)
         {
             /* subtrai todos os valores da esquerda
              * exceto o coeficiente da variavel
@@ -413,7 +419,7 @@ Celula* backSub(Celula** mat, int size)
     return x;  // retorna os resultados
 }
 
-// funcao principal
+// funcao principal de resolução do sistema
 Celula* eliminacaoGaussiana(Celula** mat, int size)
 {
     /* reduzir para forma escalonada */
@@ -422,15 +428,15 @@ Celula* eliminacaoGaussiana(Celula** mat, int size)
     /* se matrix for singular */
     if (sinalizadordeSingular != -1)
     {
-        printf("Matriz Singular!\n");
+        printf("\nMatriz Singular!\n");
 
         /* se a forma escalonada da equacao correspondente
            a linha 0 for 0, o sistema possuirá
            infinitas soluções: SI*/
         if ((*(mat+sinalizadordeSingular)+size))
-            printf("O sistema eh Sistema Indeterminado.");
+            printf("\nO sistema eh Sistema Indeterminado.");
         else
-            printf("Existem infinitas solucoes.");
+            printf("\nExistem infinitas solucoes.");
 
         return NULL;
     }
@@ -451,7 +457,12 @@ int main()
 
     /////////////////////////////////////
 
-    INICIO:printf("Digite o arquivo que deseja ler: ");
+    printf("=================================================================\n");
+    printf("======================== SISTEMAS LINEARES ======================\n");
+    printf("=================================================================\n");
+    printf("\n");
+
+    INICIO:printf("Digite o arquivo de sistemas que deseja ler: ");
     scanf("%s", path);
 
     arq = fopen(path, "r");
@@ -486,7 +497,7 @@ int main()
 
     if (length(incognitas) > qtdEquacoes) // indica caso o sistema não seja possível determinado
     {
-		printf("Sistema nao eh possivel determinado, ou seja, possui mais de um conjunto solucao! \n\n");
+		printf("\nSistema nao eh possivel determinado, ou seja, possui mais de um conjunto solucao! \n\n");
 		goto INICIO;
 	}
 
@@ -496,14 +507,20 @@ int main()
 
     /////////////////////////////////////
 
-    // resolve o sistema
-    printf("Sistema:\n");
-    for (i = 0; i < qtdEquacoes; i++)
-        printf(" %s\n", *(equacoes+i));
+    if (resultado != NULL)
+    {
+        // resolve o sistema
+        printf("\nSistema:\n");
+        for (i = 0; i < qtdEquacoes; i++)
+            printf(" %s\n", *(equacoes+i));
 
-    printf("\nSolucao do sistema:\n");
-    for (int i = 0; i < qtdEquacoes; i++)
-        printf(" %s = %.2lf\n", (resultado+i)->nome, (resultado+i)->valor);
+        printf("\nSolucao do sistema:\n");
+        for (i = 0; i < qtdEquacoes; i++)
+            printf(" %s = %.2lf\n", (resultado+i)->nome, (resultado+i)->valor);
+    }
+
+    printf("\n================================\n");
+    printf("\nPor Caio Petrucci e Joao Henri\n\n            17167 | 17185\n\n");
 
     /////////////////////////////////////
 

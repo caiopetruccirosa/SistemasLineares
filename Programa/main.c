@@ -408,9 +408,26 @@ Celula* backSub(Celula** mat, int size)
         (x+i)->nome = (*(mat+i)+i)->nome;
         (x+i)->valor = (*(mat+i)+size)->valor;
 
+        ////////
+        // verfica se a ultima equacao nao é invalida
+
+        char ehZero = 1;
+
+        int j;
+        for (j = 0; j < size; j++) {
+            if ((*(mat+i)+j)->valor != 0.0) {
+                ehZero = 0;
+                break;
+            }
+        }
+
+        if (ehZero)
+            return NULL;
+
+        ////////
+
         /* inicializa j como i+1, pois a matriz é
            triangular superior*/
-        int j;
         for (j= i+1; j < size; j++)
         {
             /* subtrai todos os valores da esquerda
@@ -512,11 +529,7 @@ int main()
     Celula** coeficientes = criarMatriz(incognitas, qtdEquacoes);  // cria uma matriz com incógnitas organizadas por colunas e valores padrão
     extrairCoeficientes(coeficientes, incognitas, equacoes, qtdEquacoes);  // extrai os coeficientes, passando a matriz de coeficientes por referência
 
-    print(coeficientes, qtdEquacoes);
-
     Celula* resultado = eliminacaoGaussiana(coeficientes, qtdEquacoes); // resolve o sistema
-
-    print(coeficientes, qtdEquacoes);
 
     /////////////////////////////////////
 
@@ -530,6 +543,10 @@ int main()
         printf("\nSolucao do sistema:\n");
         for (i = 0; i < qtdEquacoes; i++)
             printf(" %s = %.2lf\n", (resultado+i)->nome, (resultado+i)->valor);
+    }
+    else
+    {
+        printf("\nSistema possivel indeterminado!\n");
     }
 
     printf("\n================================\n");

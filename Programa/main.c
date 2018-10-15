@@ -294,20 +294,19 @@ void desalocarVariaveis(FILE* arquivo, char* texto, Lista* lis, Celula** mat, ch
 
     // desacola a matriz de células
     int i;
-    for (i = 0; i < qtdEquacoes; i++)
+    for (i = qtdEquacoes-1; i >= 0; i--)
     {
         int j;
-        for (j = 0; j < qtdEquacoes; j++)
-            free((*(mat+i)+j)->nome);
-
-        free((mat+i));
+        for (j = qtdEquacoes-1; j >= 0; j--) {
+            if (j < qtdEquacoes-1)
+                free((*(mat+i)+j)->nome);
+            free((*(mat+i)+j));
+        }
     }
-    free(mat);
 
     // desaloca a matriz de equações, pois não será mais usada
-    for (i = 0; i < qtdEquacoes; i++)
+    for (i = qtdEquacoes-1; i >= 0; i--)
         free(*(equacoes+i));
-    free(equacoes);
 }
 
 
@@ -520,7 +519,8 @@ int main()
     }
 
     printf("\n================================\n");
-    printf("\nPor Caio Petrucci e Joao Henri\n\n            17167 | 17185\n\n");
+    printf("\n Por Caio Petrucci e Joao Henri \n");
+    printf("\n             17167 | 17185      \n");
 
     /////////////////////////////////////
 

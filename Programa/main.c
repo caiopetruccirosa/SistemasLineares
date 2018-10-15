@@ -189,19 +189,22 @@ void extrairCoeficientes(Celula** coeficientes, Lista* incognitas, char** equaco
                     }
                 }
 
-                if ((char_ascii >= 48 && char_ascii <= 57) || char_ascii == 45 || char_ascii == 46) // seja quaisquer números ou "-"
+                if ((char_ascii >= 48 && char_ascii <= 57) || char_ascii == 45 || char_ascii == 46) // seja quaisquer números ou "-" ou "."
                 {
                     if (coeficienteAtual == NULL)
                     {
-                        int tam = 0;  // indica quanta memória deverá ser alocada
+                        int tam = 1;  // indica quanta memória deverá ser alocada
                         int k;
-                        for (k = j; k < strlen(*(equacoes+i)); k++)
+                        for (k = j+1; k < strlen(*(equacoes+i)); k++)
                         {
                             int char_ascii_aux = (int)*(*(equacoes+i)+k);
-                            if ((char_ascii >= 48 && char_ascii <= 57) || char_ascii == 45 || char_ascii == 46)
+                            if ((char_ascii_aux >= 48 && char_ascii_aux <= 57) || char_ascii_aux == 46)
                                 tam++;
-                            else if (char_ascii_aux != 32)
+                            else if (char_ascii_aux != 32) {
+                                if (tam == 1 && char_ascii == 45)
+                                    tam++;
                                 break;
+                            }
                         }
 
                         coeficienteAtual = (char*)malloc((tam+1)*sizeof(char));  // aloca a memória para o coeficiente
@@ -216,7 +219,13 @@ void extrairCoeficientes(Celula** coeficientes, Lista* incognitas, char** equaco
                     if (coeficienteAtual == NULL)  // caso o coeficiente seja nulo, irá gerar um coeficiente neutro ("1")
                     {
                         coeficienteAtual = (char*)malloc((2)*sizeof(char));
-                        *coeficienteAtual = "1";  // preenche o coeficiente
+                        *coeficienteAtual = '1';  // preenche o coeficiente
+                        coeficienteAtual_index = 1;
+                    }
+
+                    if (coeficienteAtual_index == 1 && *coeficienteAtual == '-')
+                    {
+                        *(coeficienteAtual+coeficienteAtual_index) = '1';  // preenche o coeficiente
                         coeficienteAtual_index++;
                     }
 
@@ -502,7 +511,12 @@ int main()
 
     Celula** coeficientes = criarMatriz(incognitas, qtdEquacoes);  // cria uma matriz com incógnitas organizadas por colunas e valores padrão
     extrairCoeficientes(coeficientes, incognitas, equacoes, qtdEquacoes);  // extrai os coeficientes, passando a matriz de coeficientes por referência
+
+    print(coeficientes, qtdEquacoes);
+
     Celula* resultado = eliminacaoGaussiana(coeficientes, qtdEquacoes); // resolve o sistema
+
+    print(coeficientes, qtdEquacoes);
 
     /////////////////////////////////////
 
@@ -524,5 +538,5 @@ int main()
 
     /////////////////////////////////////
 
-    desalocarVariaveis(arq, texto, incognitas, coeficientes, equacoes, qtdEquacoes);  // desaloca as variáveis que não serão mais usadas
+    //desalocarVariaveis(arq, texto, incognitas, coeficientes, equacoes, qtdEquacoes);  // desaloca as variáveis que não serão mais usadas
 }

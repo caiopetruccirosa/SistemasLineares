@@ -164,6 +164,7 @@ void extrairCoeficientes(Celula** coeficientes, Lista* incognitas, char** equaco
                 if (char_ascii == 61) // igual a "="
                     ladoDaEquacao = 1;
 
+
                 if (char_ascii == 43 || char_ascii == 45 || char_ascii == 61) // igual a "+" ou a "-" ou a "="
                 {
                     if (coeficienteAtual != NULL && incognitaAtual != NULL)  // caso um coeficiente e uma incógnita já tenham sido
@@ -252,16 +253,16 @@ void extrairCoeficientes(Celula** coeficientes, Lista* incognitas, char** equaco
             }
             else if (ladoDaEquacao > 0) // depois do "="
             {
-                if (char_ascii >= 48 && char_ascii <= 57) // quaisquer números
+                if ((char_ascii >= 48 && char_ascii <= 57) || char_ascii == 45 || char_ascii == 46) // quaisquer números
                 {
                     if (resultado == NULL)
                     {
-                        int tam = 0;  // indica quanta memória deverá ser alocada
+                        int tam = 1;  // indica quanta memória deverá ser alocada
                         int k;
-                        for (k = j; k < strlen(*(equacoes+i)); k++)
+                        for (k = j+1; k < strlen(*(equacoes+i)); k++)
                         {
                             int char_ascii_aux = (int)*(*(equacoes+i)+k);
-                            if (char_ascii_aux >= 48 && char_ascii_aux <= 57)
+                            if ((char_ascii >= 48 && char_ascii <= 57) || char_ascii == 46)
                                 tam++;
                             else if (char_ascii_aux != 32)
                                 break;
@@ -290,7 +291,7 @@ void extrairCoeficientes(Celula** coeficientes, Lista* incognitas, char** equaco
 }
 
 // Método que desaloca as variáveis
-void desalocarVariaveis(FILE* arquivo, char* texto, Lista* lis, Celula** mat, char** equacoes, int qtdEquacoes)
+void desalocarVariaveis(FILE* arquivo, char* texto, Lista* lis, char** equacoes, int qtdEquacoes)
 {
     // desaloca o arquivo, pois ele não será mais usado
     free(arquivo);
@@ -301,21 +302,11 @@ void desalocarVariaveis(FILE* arquivo, char* texto, Lista* lis, Celula** mat, ch
     // desaloca a lista
     free(lis);
 
-    // desacola a matriz de células
-    int i;
-    for (i = qtdEquacoes-1; i >= 0; i--)
-    {
-        int j;
-        for (j = qtdEquacoes-1; j >= 0; j--) {
-            if (j < qtdEquacoes-1)
-                free((*(mat+i)+j)->nome);
-            free((*(mat+i)+j));
-        }
-    }
-
     // desaloca a matriz de equações, pois não será mais usada
-    for (i = qtdEquacoes-1; i >= 0; i--)
+    int i;
+    for (i = 0; i < qtdEquacoes; i++)
         free(*(equacoes+i));
+    free(equacoes);
 }
 
 
@@ -400,6 +391,19 @@ Celula* backSub(Celula** mat, int size)
     Celula* x;  // vetor para guardar os resultados
     x = (Celula*)malloc(size*sizeof(Celula));
 
+    // verfica se a ultima equacao nao é invalida
+    char ehZero = 1;
+    int j;
+    for (j = 0; j < size; j++) {
+        if ((*(mat+size-1)+j)->valor != 0.0) {
+            ehZero = 0;
+            break;
+        }
+    }
+
+    if (ehZero)
+        return NULL;
+
     /* comeca calculando a partir da ultima equacao*/
     int i;
     for (i = size-1; i >= 0; i--)
@@ -407,24 +411,6 @@ Celula* backSub(Celula** mat, int size)
         /* começa com o lado direito da equação */
         (x+i)->nome = (*(mat+i)+i)->nome;
         (x+i)->valor = (*(mat+i)+size)->valor;
-
-        ////////
-        // verfica se a ultima equacao nao é invalida
-
-        char ehZero = 1;
-
-        int j;
-        for (j = 0; j < size; j++) {
-            if ((*(mat+i)+j)->valor != 0.0) {
-                ehZero = 0;
-                break;
-            }
-        }
-
-        if (ehZero)
-            return NULL;
-
-        ////////
 
         /* inicializa j como i+1, pois a matriz é
            triangular superior*/
@@ -482,9 +468,9 @@ int main()
 
     /////////////////////////////////////
 
-    printf("=================================================================\n");
-    printf("======================== SISTEMAS LINEARES ======================\n");
-    printf("=================================================================\n");
+    printf("===================================================================\n");
+    printf("========================= SISTEMAS LINEARES =======================\n");
+    printf("===================================================================\n");
     printf("\n");
 
     INICIO:printf("Digite o arquivo de sistemas que deseja ler: ");
@@ -527,8 +513,8 @@ int main()
 	}
 
     Celula** coeficientes = criarMatriz(incognitas, qtdEquacoes);  // cria uma matriz com incógnitas organizadas por colunas e valores padrão
+    print(coeficientes, qtdEquacoes);
     extrairCoeficientes(coeficientes, incognitas, equacoes, qtdEquacoes);  // extrai os coeficientes, passando a matriz de coeficientes por referência
-
     Celula* resultado = eliminacaoGaussiana(coeficientes, qtdEquacoes); // resolve o sistema
 
     /////////////////////////////////////
@@ -555,5 +541,5 @@ int main()
 
     /////////////////////////////////////
 
-    //desalocarVariaveis(arq, texto, incognitas, coeficientes, equacoes, qtdEquacoes);  // desaloca as variáveis que não serão mais usadas
+    desalocarVariaveis(arq, texto, incognitas, equacoes, qtdEquacoes);  // desaloca as variáveis que não serão mais usadas
 }

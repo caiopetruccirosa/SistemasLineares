@@ -1,4 +1,4 @@
-# SistemasLineares
+# Sistemas Lineares
 
 Projeto de Tópicos em Orientação a Objetos. 
 
